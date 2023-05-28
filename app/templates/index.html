@@ -1,0 +1,138 @@
+<style>
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 2em;
+  }
+
+  .row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    margin-top: 1em;
+  }
+
+  .col-lg-8 {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+
+  .col-lg-6 {
+    flex-basis: 50%;
+    max-width: 50%;
+  }
+
+  #videoFeed {
+    height: 80%;
+  }
+
+  #emotionChart {
+    height: 900px;
+  }
+
+  h3,
+  ol {
+    font-family: courier;
+  }
+</style>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 offset-lg-2">
+        <h2 class="mt-5">CAMERA APP</h2>
+        <form method="post" action="{{ url_for('tasks') }}">
+          <input type="submit" value="Stop/Start" name="stop" />
+          <input type="submit" value="Capture" name="click" />
+          <input type="submit" value="Negative" name="neg" />
+          <input type="submit" value="Face Only" name="face" />
+          <input type="submit" value="Start/Stop Recording" name="rec" />
+        </form>
+        <div class="row">
+          <div class="col-lg-6">
+            <img src="{{ url_for('video_feed') }}" height="80%" />
+          </div>
+          <div class="col-lg-6">
+            <canvas id="emotionChart"></canvas>
+          </div>
+        </div>
+        <h3 style="font-family: courier">Instructions:</h3>
+        <ol style="font-family: courier">
+          <li>Stop/Start--Toggle between stop or start live streaming</li>
+          <li>Capture--Take still-shot and save in the 'shots' directory</li>
+          <li>Negative--Toggle between negative and RGB output</li>
+          <li>Face Only--Shows just your face if present(Toggle on/off)</li>
+          <li>
+            Start/Stop Recording--Toggle between starting and stopping video
+            recording
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var ctx = document.getElementById("emotionChart").getContext("2d");
+
+      var label_dict = {
+        0: "Angry",
+        1: "Disgust",
+        2: "Fear",
+        3: "Happy",
+        4: "Neutral",
+        5: "Sad",
+        6: "Surprise",
+      };
+
+      var labels = Object.values(label_dict);
+      var data = Array.from({ length: labels.length }, () => 0); // Initialize data with zeros
+
+      var chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Emotions",
+              data: data,
+              backgroundColor: "rgba(75, 192, 192, 0.6)",
+              borderColor: "rgba(75, 192, 192, 1)",
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+            },
+          },
+        },
+      });
+
+      // Function to update the chart with the received predicted data
+      function updateChart(predictedData) {
+        chart.data.datasets[0].data = predictedData.map((value) =>
+          value.toFixed(2)
+        );
+        chart.update();
+      }
+
+      // Function to fetch the updated predicted data from the server
+      function fetchPredictedData() {
+        fetch("/predicted_data")
+          .then((response) => response.json())
+          .then((data) => updateChart(data))
+          .catch((error) => console.error("Error:", error));
+      }
+
+      // Initial fetch of predicted data
+      fetchPredictedData();
+
+      // Periodically fetch the updated predicted data every 5 seconds
+      setInterval(fetchPredictedData, 500);
+    });
+  </script>
+</body>
