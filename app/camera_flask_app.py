@@ -19,19 +19,16 @@ predicted_data = [0, 0, 0, 0, 0, 0, 0]
 model_path = "./saved_model/emotions_model.h5"
 model = load_model(model_path)
 
-# make shots directory to save pics
 try:
     os.mkdir("./shots")
 except OSError as error:
     pass
 
-# Load pretrained face detection model
 net = cv2.dnn.readNetFromCaffe(
     "./saved_model/deploy.prototxt.txt",
     "./saved_model/res10_300x300_ssd_iter_140000.caffemodel",
 )
 
-# instatiate flask app
 app = Flask(__name__, template_folder="./templates")
 
 
